@@ -1,25 +1,32 @@
+
+import path from 'path';
+import fsp from 'fs/promises';
+import { ingestFirstFileFromMultipart } from './lib/ingest.js';
+import { runUploadPipeline } from './lib/stream-pipeline.js';
+import { config } from './config.js';
+
 function nowIso() {
     return new Date().toISOString();// returns the current date and time in ISO 8601 format
 }
 
-import { upsert } from './store.js';
+function mapUploadError(err) {
+    // 499 is commonly used for "client closed request"
+    if (err?.name === "AbortError" || err?.code === "ABORT_ERR") {
+        return { status: 499, body: { ok: false, error: "Upload aborted" } };
+    }
+
+    if (err?.code === "LIMIT_FILE_SIZE") {
+        return { status: 413, body: { ok: false, error: "File too large" } };
+    }
+
+    return { status: 500, body: { ok: false, error: "Upload failed" } };
+}
+
 
 export async function registerRoutes(app) {
     // Example route registration
     app.get('/health', async (req, res) => {
         res.send({ status: 'ok', timestamp: nowIso() });
-    });
-
-    app.post('/upload', async (req, res) => {
-        // Handle file upload here
-        const record = {
-            id: req.body.id,
-            status: 'created',
-            createdAt: nowIso(),
-            updatedAt: nowIso(),
-        }
-        res.send({ status: 'uploaded', timestamp: nowIso() });
-        upsert(record);
     });
 
     app.get('/files/:id', async (req, res) => {
@@ -43,6 +50,52 @@ export async function registerRoutes(app) {
         }
 
 
-        return res.code(501).send({ error: 'Not implemented', hint: 'File content retrieval not yet implemented' });
+        return res.status(501).send({ error: 'Not implemented', hint: 'File content retrieval not yet implemented' });
+    });
+
+
+    app.post('/upload', async (req, reply) => {
+        const ingested = await ingestFirstFileFromMultipart(req);
+        if (!ingested) {
+            return reply.code(400).send({ ok: false, error: 'No file part was found in the request' });
+        }
+        const id = ingested.id;
+
+        const tmpPath = path.join(config.staging_dir, `${id}.tmp`);
+        const finalPath = path.join(config.processed_dir, `${id}.bin`);
+
+        const ac = new AbortController();
+
+        const onClose = () => ac.abort();
+        // req.raw.on("aborted", onClose);
+        // req.raw.on("close", onClose);
+
+        try {
+            const { bytesWritten } = await runUploadPipeline({
+                sourceStream: ingested.stream,
+                destPath: tmpPath,
+                maxBytes: 2 * 1024,// 2 KB max size
+                signal: ac.signal
+            });
+
+            updateRecord(ingested.id, { status: "succeeded", bytesStored: bytesWritten, storedPath: finalPath });
+            await fsp.rename(tmpPath, finalPath);// Move the file from the temporary path to the final destination
+
+            return reply.send({
+                ok: true,
+                id: ingested.id,
+                bytesWritten,
+                savedAs: path.basename(finalPath),
+                ownerId: req.user?.id
+            });
+
+        }
+        catch (err) {
+            await fsp.rm(tmpPath, { force: true }).catch(() => { });
+            const mapped = mapUploadError(err);
+            return reply
+                .code(mapped.status)
+                .send(mapped.body);
+        }
     });
 }
