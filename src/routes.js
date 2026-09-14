@@ -1,6 +1,7 @@
 
 import path from 'path';
 import fsp from 'fs/promises';
+import fs from 'fs';
 import { ingestFirstFileFromMultipart } from './lib/ingest.js';
 import { runUploadPipeline } from './lib/stream-pipeline.js';
 import { config } from './config.js';
@@ -34,10 +35,30 @@ export async function registerRoutes(app) {
         // Retrieve the file record by id here
         const record = await getById(id);
         if (!record) {
-            res.status(404).send({ error: 'File not found' });
-            return;
+            return res.code(404).send({ error: 'File not found' });
         }
-        res.send(record);
+
+        if (record.status !== "succeeded") {
+            return res.code(409).send({ error: 'File not ready for download' });
+        }
+
+        const filePath = record.storedPath ?? path.join(config.processed_dir, `${id}.bin`);
+
+        const root = path.resolve(config.processed_dir);
+        const resolved = path.resolve(filePath);
+
+        if (!resolved.startsWith(root)) { // Ensure the resolved file path is within the allowed directory
+            return res.code(403).send({ error: 'Invalid path' }); // Prevent directory traversal attacks
+        }
+
+        if (!fs.existsSync(resolved)) {
+            return res.code(410).send({ error: 'File not found' });
+        }
+
+        res.header("Content-Type", record.mime || "application/octet-stream");
+        res.header("Content-Disposition", `attachment; filename="${path.basename(filePath)}"`);
+
+        return res.send(fs.createReadStream(resolved));
     });
 
     app.get('/files/:id/content', async (req, res) => {
@@ -45,8 +66,7 @@ export async function registerRoutes(app) {
         // Retrieve the file record by id here
         const record = await getById(id);
         if (!record) {
-            res.status(404).send({ error: 'File not found' });
-            return;
+            return res.code(404).send({ error: 'File not found' });
         }
 
 
