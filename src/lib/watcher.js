@@ -13,7 +13,7 @@ import { log } from "node:console";
 const inFlight = new Set();
 
 export function startIncomingWatcher({ logger }) {
-    const incomingDir = config.incomingDir;
+    const incomingDir = config.incoming_dir;
 
     const watcher = chokidar.watch(incomingDir, {
         ignoreInitial: true,
@@ -58,8 +58,8 @@ async function handleIncomingFile({ filePath, logger }) {
 
     updateRecord(id, { status: "processing" });
 
-    const tmpPath = path.join(config.stagingDir, `${id}.tmp`);
-    const finalPath = path.join(config.processedDir, `${id}.bin`);
+    const tmpPath = path.join(config.staging_dir, `${id}.tmp`);
+    const finalPath = path.join(config.processed_dir, `${id}.bin`);
 
     const ac = new AbortController();
     const timeout = setTimeout(() => ac.abort(), 10000);
@@ -92,7 +92,7 @@ async function handleIncomingFile({ filePath, logger }) {
             status: ac.signal.aborted ? "aborted" : "failed",
             error: err?.message || "Unknown error"
         })
-        const failedPath = path.join(config.failedDir, `${id}-${originalName}`);
+        const failedPath = path.join(config.failed_dir, `${id}-${originalName}`);
         await fsp.rename(filePath, failedPath);
 
         logger.error({ err, id, originalName }, "Incoming file failed");

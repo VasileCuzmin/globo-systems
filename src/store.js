@@ -12,9 +12,9 @@ export function getAll() {
     return Array.from(records.values());
 }
 
-export function createRecord({ id, originalName, mime, source }) {
+export function createRecord({ id, originalName, mime, source, ownerId }) {
     const now = new Date().toISOString();
-    records.set(id, { id, originalName, mime, source, status: "created", bytesReceived: 0, createdAt: now, updatedAt: now });
+    records.set(id, { id, originalName, mime, source, ownerId, status: "created", bytesReceived: 0, createdAt: now, updatedAt: now });
     return records.get(id);
 }
 

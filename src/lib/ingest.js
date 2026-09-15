@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { createRecord, updateRecord } from './store.js';
+import { createRecord, updateRecord } from '../store.js';
 
 export async function ingestFirstFileFromMultipart(req) {
     for await (const part of req.parts()) {
@@ -11,7 +11,7 @@ export async function ingestFirstFileFromMultipart(req) {
         const originalName = part.filename ?? 'upload.bin';
         const mime = part.mimeType ?? 'application/octet-stream';
 
-        createRecord({ id, originalName, mime, source: "http" });
+        createRecord({ id, originalName, mime, source: "http", ownerId: req.user.id });
         updateRecord(id, { status: "uploading" });
         return { id, originalName, mime, stream: part.file };
     }

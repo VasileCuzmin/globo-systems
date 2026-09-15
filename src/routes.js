@@ -38,6 +38,12 @@ export async function registerRoutes(app) {
             return res.code(404).send({ error: 'File not found' });
         }
 
+        try {
+            assertOwner({ req, record });
+        } catch (err) {
+            return res.code(403).send({ error: 'Forbidden' });
+        }
+
         if (record.status !== "succeeded") {
             return res.code(409).send({ error: 'File not ready for download' });
         }
@@ -118,4 +124,13 @@ export async function registerRoutes(app) {
                 .send(mapped.body);
         }
     });
+
+
+    function assertOwner({ req, record }) {
+        if (req.user?.id !== record.ownerId) {
+            const err = new Error('Forbidden');
+            err.code = "ERR_FORBIDDEN";
+            throw err;
+        }
+    }
 }
