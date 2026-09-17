@@ -4,9 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "hello": "echo 'Hello, NPM Scripts!'",
+    "dev:ts": "tsx watch packages/server/src --exec 'tsx packages/server/src/index.ts'",
+    "dev:sass": "sass --watch src/styles.scss:./dist/styles.css",
+    "build:ts": "tsc -b packages/server",
+    "build:sass": "sass packages/server/src/styles.scss packages/server/dist/styles.css",
     "start": "node src/server.js",
-    "dev": "node --watch --env-file=.env src/server.js"
+    "dev": "node --watch --env-file=.env src/server.js",
+    "prepare": "husky",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "prebuild": "echo Starting build...",
+    "postbuild": "echo Build complete!",
+    "build": "cross-env NODE_ENV=production npm run build:ts && npm run build:sass"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +28,12 @@
     "@fastify/multipart": "^10.1.1",
     "chokidar": "^5.0.0",
     "fastify": "^5.12.4"
+  },
+  "devDependencies": {
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.7"
   }
 }
