@@ -155,7 +155,44 @@ Records are kept in memory, so file metadata and ownership information are lost 
 | --- | --- |
 | `npm start` | Runs `node src/server.js`. |
 | `npm run dev` | Runs the server in Node watch mode and loads `.env` when present. |
-| `npm test` | Placeholder script; no automated tests are configured yet. |
+| `npm test` | Runs the Vitest test suite once in the Node.js environment. |
+| `npm run coverage` | Runs the Vitest test suite with V8 coverage enabled. |
+| `npm run lint` | Runs ESLint against TypeScript files. |
+| `npm run format` | Formats repository files with Prettier. |
+
+## Testing And Code Quality
+
+Run the test suite once:
+
+```bash
+npm test
+```
+
+Vitest is configured for Node.js with global test APIs. There are currently no test files in the repository, so Vitest reports that no tests were found and exits with an error until tests are added.
+
+Generate a V8 coverage report:
+
+```bash
+npm run coverage
+```
+
+The HTML coverage report is written to `coverage/index.html`. Coverage requires test files; it will also fail while the suite is empty.
+
+Check TypeScript code with ESLint:
+
+```bash
+npm run lint
+```
+
+The lint script runs ESLint across the repository and adds TypeScript file discovery with `--ext .ts`; it ignores `dist` and `node_modules`. Fix the reported source issues before expecting this command to pass.
+
+Format all project files with Prettier:
+
+```bash
+npm run format
+```
+
+This command writes formatting changes directly to files. Husky is installed through the `prepare` script, and lint-staged runs `eslint --fix` and `prettier --write` on staged `.ts` and `.js` files during commits.
 
 ## Project Structure
 
