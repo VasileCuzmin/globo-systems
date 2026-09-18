@@ -1,15 +1,28 @@
-FROM node:alpine
-
+# Final stage for building the Node.js application  
+FROM node:24.6.0 AS builder
 WORKDIR /app
-
 COPY package*.json ./
+COPY src ./src
 
 RUN npm install
 
-COPY . . 
-# Copy all files to the working directory. Why is it after installing dependencies? 
-# This allows Docker to cache the npm install layer, so it doesn't have to reinstall dependencies if only the application code changes.
-
+# Debug: show the contents of the working directory after copying the initial files
+RUN echo "Contents of /app after copying initial files:" && ls -la /app
 RUN npm run build
+RUN echo "Contents of /app after building:" && ls -la /app
 
-CMD ["npm", "start"]
+
+
+# Runtime stage for running the Node.js application
+FROM node:24.6.0-alpine AS runtime
+WORKDIR /app
+
+# Copy the built application and package files from the builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+# Install only the production dependencies (no devDependencies, skip scripts like husky)
+RUN npm install --only=production --omit-dev --ignore-scripts
+
+
+CMD ["node", "dist/server.js"]
