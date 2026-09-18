@@ -168,7 +168,13 @@ Run the test suite once:
 npm test
 ```
 
-Vitest is configured for Node.js with global test APIs. There are currently no test files in the repository, so Vitest reports that no tests were found and exits with an error until tests are added.
+Vitest is configured for Node.js with global test APIs and an HTML reporter. Install the required reporter package once before running tests:
+
+```bash
+npm install --save-dev @vitest/ui
+```
+
+There are currently no test files in the repository, so Vitest reports that no tests were found and exits with an error until tests are added.
 
 Generate a V8 coverage report:
 
@@ -176,7 +182,7 @@ Generate a V8 coverage report:
 npm run coverage
 ```
 
-The HTML coverage report is written to `coverage/index.html`. Coverage requires test files; it will also fail while the suite is empty.
+The HTML coverage report is written to `coverage/index.html`. Coverage requires `@vitest/ui` and test files; it will fail while either is missing.
 
 Check TypeScript code with ESLint:
 

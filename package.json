@@ -5,20 +5,21 @@
   "main": "index.js",
   "scripts": {
     "hello": "echo 'Hello, NPM Scripts!'",
-    "dev:ts": "tsx watch packages/server/src --exec 'tsx packages/server/src/index.ts'",
     "dev:sass": "sass --watch src/styles.scss:./dist/styles.css",
-    "build:ts": "tsc -b packages/server",
-    "build:sass": "sass packages/server/src/styles.scss packages/server/dist/styles.css",
+    "build:sass": "sass ./src/styles.scss ./dist/styles.css",
     "start": "node src/server.js",
     "dev": "node --watch --env-file=.env src/server.js",
     "prepare": "husky",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint . --ext .js,.ts",
     "format": "prettier --write .",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "prebuild": "echo Starting build...",
+    "build": "cross-env NODE_ENV=production npm run build:sass && npm run build:js",
+    "build:js": "esbuild src/server.js --bundle --platform=node --format=esm --outdir=dist",
     "postbuild": "echo Build complete!",
-    "build": "cross-env NODE_ENV=production npm run build:ts && npm run build:sass"
+    "docker:build": "podman build -t globo-systems .",
+    "docker:run": "podman run -p 3000:3000 globo-systems"
   },
   "lint-staged": {
     "*.ts": [
