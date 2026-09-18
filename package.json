@@ -19,7 +19,9 @@
     "build:js": "esbuild src/server.js --bundle --platform=node --format=esm --outdir=dist",
     "postbuild": "echo Build complete!",
     "docker:build": "podman build -t globo-systems .",
-    "docker:run": "podman run -p 3000:3000 globo-systems"
+    "docker:run": "podman run -p 3000:3000 globo-systems",
+    "compose:up": "podman compose up",
+    "compose:down": "podman compose down"
   },
   "lint-staged": {
     "*.ts": [
